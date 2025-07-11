@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ChatOnSite</title>
+    <link rel="stylesheet" href="static/bootstrap5/bootstrap.css">
+    <link rel="stylesheet" href="static/highlight_js/default.min.css">
+    <link rel="stylesheet" href="static/css-test.css">
+</head>
+
+<body style="height: 100%">
+    <div class="container" style="height: 100%;overflow: auto">
+        <div class="col" style="height: calc(100% - 50px);overflow: auto" id="collection">
+
+        </div>
+
+        <div class="row pt-2">
+            <div class="col d-flex justify-content-center">
+                <button id="record_info" class="btn btn-primary w-75" type="button" disabled>
+                    <span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>
+                    Waiting for keyword...
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="static/marked/marked.min.js"></script>
+    <script src="static/marked-highlight/index.umd.min.js"></script>
+    <script src="static/highlight_js/highlight.min.js"></script>
+    <script src="static/bootstrap5/bootstrap.bundle.js"></script>
+    <script>
+        const { markedHighlight } = window.markedHighlight
+        const { Marked } = window.marked
+        const marked = new Marked(
+            markedHighlight({
+                langPrefix: 'hljs language-',
+                highlight(code, lang, info) {
+                    const language = hljs.getLanguage(lang) ? lang : 'plaintext'
+                    return hljs.highlight(code, { language }).value
+                }
+            })
+        )
+        record_info = document.getElementById('record_info')
+        collection = document.getElementById('collection')
+        sse_text = new EventSource("http://localhost:8000/stream")
+        s = ''
+        chat_round = 0
+        sse_text.onmessage = function (evt) {
+            sse_msg = JSON.parse(evt.data)
+
+            if (sse_msg.msg === undefined) {
+                sse_func[sse_msg.type]()
+            } else {
+                sse_func[sse_msg.type](sse_msg.msg)
+            }
+        }
+        loading = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
+        scroll_to_end = () => document.getElementById('collection').scrollTop = document.getElementById('collection').scrollHeight
+        sse_func = {
+            to_recording: () => {
+                record_info.innerHTML = `${loading}Recording...`
+                chat_round += 1
+            },
+            to_stt: () => record_info.innerHTML = `${loading}STT Running...`,
+            human_msg: (ques) => {
+                collection.innerHTML += `
+                <p style="display: flex; align-items: center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48" style="width: 36px;height: 36px">
+                        <path stroke-linejoin="round" stroke-linecap="round" stroke-width="4" stroke="#333"
+                            d="M24 20a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM6 40.8V42h36v-1.2c0-4.48 0-6.72-.872-8.432a8 8 0 0 0-3.496-3.496C35.92 28 33.68 28 29.2 28H18.8c-4.48 0-6.72 0-8.432.872a8 8 0 0 0-3.496 3.496C6 34.08 6 36.32 6 40.8Z"
+                            data-follow-stroke="#333"/>
+                    </svg>
+                    User Message:
+                </p>
+                <p>${ques}</p>
+
+                <p style="display: flex; align-items: center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 48 48" style="width: 36px;height: 36px">
+                        <rect stroke-linejoin="round" stroke-width="4" stroke="#333" rx="3" height="28" width="36" y="6" x="6"
+                            data-follow-stroke="#333"/>
+                        <path stroke-linejoin="round" stroke-linecap="round" stroke-width="4" stroke="#333"
+                            d="M14 42h20M24 34v8" data-follow-stroke="#333"/>
+                    </svg>
+                    AI Message:
+                </p>
+                <div class="stage1" style="color: rgba(0, 0, 0, 0.7);font-size: 14px;white-space: pre-wrap;padding: 5px;"></div>
+                <img class="photo" src="" style="width: 75%;height: auto;">
+                <div class="img_desc" style="color: rgba(0, 0, 0, 0.7);font-size: 14px;white-space: pre-wrap;"></div>
+                <div class="stage2" style="color: rgba(0, 0, 0, 0.7);font-size: 14px;white-space: pre-wrap;padding: 5px;"></div>
+                <div class="file" ></div>
+                <div class="stage3" style="white-space: pre-wrap"></div>
+                <div class="ref"></div>
+                `
+            },
+            prefixing: () => {
+                record_info.innerHTML = `${loading}LLM Prefixing...`
+                s = ''
+            },
+            decoding: () => record_info.innerHTML = `${loading}LLM Decoding...`,
+            stage1: (ans) => {
+                const elements = document.querySelectorAll('.stage1')
+                const msg_div = elements[elements.length - 1]
+                msg_div.style.backgroundColor = 'whitesmoke'
+                s += ans
+                msg_div.innerHTML = s
+                scroll_to_end()
+            },
+            img_desc: (ans) => {
+                const elements = document.querySelectorAll('.img_desc')
+                const msg_div = elements[elements.length - 1]
+                msg_div.style.backgroundColor = 'whitesmoke'
+                s += ans
+                s = s.replace('<ED>', '')
+                msg_div.innerHTML = s
+                scroll_to_end()
+            },
+            stage2: (ans) => {
+                const elements = document.querySelectorAll('.stage2')
+                const msg_div = elements[elements.length - 1]
+                msg_div.style.backgroundColor = 'whitesmoke'
+                s += ans
+                msg_div.innerHTML = s
+                scroll_to_end()
+            },
+
+            photo: (b64) => {
+                const elements = document.querySelectorAll('.photo')
+                const msg_div = elements[elements.length - 1]
+                msg_div.src = `data:image/jpeg;base64,${b64}`
+                msg_div.style.padding = '10px'
+            },
+            img_desc: (ans) => {
+                const elements = document.querySelectorAll('.img_desc')
+                const msg_div = elements[elements.length - 1]
+                msg_div.style.backgroundColor = 'whitesmoke'
+                msg_div.style.padding = '5px'
+                msg_div.style.margin = '10px'
+
+                s += ans
+                s = s.replace('<ED>', '')
+                msg_div.innerHTML = s
+                scroll_to_end()
+            },
+            retrieve: (file_name) => {
+                const elements = document.querySelectorAll('.file')
+                const msg_div = elements[elements.length - 1]
+                msg_div.innerHTML += `<p style="display: flex; align-items: center">📄Use document: ${file_name}</p>`
+                scroll_to_end()
+            },
+            stage3: (ans) => {
+                const elements = document.querySelectorAll('.stage3')
+                const msg_div = elements[elements.length - 1]
+                s += ans
+                msg_div.innerHTML = s
+                scroll_to_end()
+            },
+            ref: (ans) => {
+                const elements = document.querySelectorAll('.stage3')
+                const msg_div = elements[elements.length - 1]
+                const elements1 = document.querySelectorAll('.ref')
+                const ref_div = elements1[elements1.length - 1]
+                for (let k in ans) {
+                    const alias = ans[k][0]
+                    const img_b64 = ans[k][1]
+                    const ref_text = marked.parse(ans[k][2])
+                    const pattern = new RegExp(`\\[(${k})\\]`, 'g')
+                    msg_div.innerHTML = msg_div.innerHTML.replace(pattern,
+                        `<button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#refModal-Chat-${chat_round}-${k}">${alias}</button>`
+                    )
+                    ref_div.innerHTML += `
+                    <div class="modal fade" id="refModal-Chat-${chat_round}-${k}" tabindex="-1" aria-labelledby="refModalLabel-Chat-${chat_round}-${k}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="refModalLabel-Chat-${chat_round}-${k}">${k}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <img class="photo" src="data:image/jpeg;base64,${img_b64}" style="width: 100%;height: auto;padding: 10px;">
+                                    ${ref_text}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+                }
+
+
+            },
+            tts: () => record_info.innerHTML = `${loading}Speech synthesis...`,
+
+            to_waking: () => {
+                record_info.innerHTML = '<span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Waiting for keyword...'
+                s = ''
+            }
+
+
+
+
+        }
+
+
+    </script>
+</body>
+
+</html>
