@@ -1,5 +1,21 @@
 ## Introduction
 This repository implemented an offline voice assistant for providing construction workers with onsite operating instructions. We developed an AI agent which is integrated with three tools: "photography", "retrieving", and "showing reference". It is powered by two lightweight LLMs and can be deployed on a smartphone, without relying on any cloud computing platforms.
+<table>
+<tr>
+<td align="center">
+<img src="./demo/plank.gif" alt="GIF 1" style="width: 200px;"/>
+<br>Floor laying
+</td>
+<td align="center">
+<img src="./demo/block.gif" alt="GIF 2" style="width: 200px;"/>
+<br>Block masonry
+</td>
+<td align="center">
+<img src="./demo/rebar.gif" alt="GIF 3" style="width: 200px;"/>
+<br>Rebar tying
+</td>
+</tr>
+</table>
 ## Installation requirements
 You will need an Android phone to run this agent. A high-performance SoC such as the Snapdragon 8 Gen 3 or the Snapdragon 8 Elite is recommended to achieve faster running speed.
 ## Installation steps
