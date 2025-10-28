@@ -96,14 +96,13 @@ Open Termux. At this point, you will enter a terminal. Then:
     ```
 8. Clone funasr:
     ```bash
-    git clone https://github.com/alibaba/FunASR.git && cd FunASR/runtime/python/onnxruntime
+    git clone https://github.com/Yan-Xiangjun/FunASR.git && cd FunASR/runtime/python/onnxruntime
     ```
-9. Run `nano setup.py`, replace `onnx` in the `install_requires` list with `jieba`, press `Ctrl+X`, then press `Y`, and finally press `Enter`.
-10. Build funasr_onnx. Please replace `xx` with the actual Python version on your phone.
+9. Build funasr_onnx. Please replace `xx` with the actual Python version on your phone.
     ```bash
     LDFLAGS=-lpython3.xx pip install -e ./ && cd ~
     ```
-11. Install other necessary Python packages:
+10. Install other necessary Python packages:
     ```bash
     pip install openwakeword==0.4.0 silero-vad flask flask-cors openai==1.72.0 num2words pydantic==2.11.0 transformers==4.50.3
     ```
