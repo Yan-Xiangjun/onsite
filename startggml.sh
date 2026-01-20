@@ -1,1 +1,0 @@
-~/llama.cpp-b5009/build/bin/llama-server -m ~/on_site/model/gemma/google_gemma-3-4b-it-Q4_0.gguf --threads 6 --temp 0.01 -c 8192 --slot-save-path ~/on_site/document_cache

@@ -1,28 +1,25 @@
 from flask import Flask, send_file, Response
 from flask_cors import CORS
-from llm import llm
-from stt import stt
+from llm import *
+from stt_tts import stt, tts, tts_async
 from kws import kws
-from tts import tts, split_sentence
-from vad import speech_is_end
+from vad import is_speech
 import threading
 import json
 import time
 from queue import Queue
-import scipy
 import re
 import toolbox
-import yaml
 import requests
 from prompt import *
 from record_sound import *
+from pathlib import Path
 
 app = Flask(__name__, static_folder='./static')
 
 audio_queue = Queue()
 sentence_queue = Queue()
-file_names = '\n'.join([f'{d}.md' for d in os.listdir('./documents')])
-
+connect_count=0
 
 def send_msg(msg_type, msg=None):
     if msg is None:
@@ -32,32 +29,9 @@ def send_msg(msg_type, msg=None):
     return f"data: {msg_sse}\n\n"
 
 
-def extract_yaml(s):
-    pattern = r'```yaml\n(.*?)```'
-    match = re.search(pattern, s, re.DOTALL)
-    return yaml.safe_load(match[1])
-
-
-def start_tts():
-    while True:
-        s = sentence_queue.get()
-        if s is None:
-            break
-        audio_queue.put(tts(s))
-    audio_queue.put(None)
-
-
-def play_tts(audio_queue):
-    while True:
-        audio_data = audio_queue.get()
-        if audio_data is None:
-            break
-        scipy.io.wavfile.write("tts.wav", rate=16000, data=audio_data)
-        play_audio("tts.wav")
-
-
 @app.route("/")
 def hello():
+    load_model(1)
     return send_file('./html-test.html')
 
 
@@ -66,146 +40,199 @@ def hello():
 def stream():
     return Response(event_stream(), content_type='text/event-stream')
 
+def wait_until_1():
+    while connect_count > 1:
+        time.sleep(0.2)
+            
 
 def event_stream():
-    while True:
-        index = 1
-        stream_kws = p.open(format=FORMAT,
-                            channels=CHANNELS,
-                            rate=RATE,
-                            input=True,
-                            frames_per_buffer=CHUNK)
+    global connect_count
+    connect_count += 1
+    wait_until_1()
+    stream_lst = []
 
-        LastFrame = []
+    try:
         while True:
-            audio_time = 3 if index == 1 else 2
-            current = []
-            for i in range(0, int(RATE * audio_time / CHUNK)):
-                data = stream_kws.read(CHUNK)
-                current.append(data)
-            frames = LastFrame + current
-            save_audio('kws.wav', b''.join(frames))
-            LastFrame = frames[len(frames) * 2 // 3:]
+            index = 1
+            yield send_msg('debug')
+            stream_kws = p.open(**audio_params)
+            if stream_kws not in stream_lst:
+                stream_lst.append(stream_kws)
+            kws_q = Queue()
+            kws_running = True
+            def kws_worker():
+                while kws_running:
+                    data = stream_kws.read(CHUNK)
+                    kws_q.put(data)
 
-            ret = kws('kws.wav')
-            if ret:
-                yield send_msg('to_recording')
-                play_audio('welcome.wav')
-                break
-            index += 1
+            t_kws = threading.Thread(target=kws_worker)
+            t_kws.start()
+            LastFrame = []
+            while True:
+                yield send_msg('debug')
+                audio_time = 3 if index == 1 else 2
+                current = []
+                for i in range(0, int(RATE * audio_time / CHUNK)):
+                    data = kws_q.get()
+                    current.append(data)
+                frames = LastFrame + current
+                yield send_msg('debug')
+                save_audio('kws.wav', b''.join(frames))
+                LastFrame = frames[len(frames) * 2 // 3:]
+                ret = kws('kws.wav')
+                if ret:
+                    kws_running = False
+                    t_kws.join()
+                    stream_lst.remove(stream_kws)
+                    stream_kws.stop_stream()
+                    stream_kws.close()
+                    yield send_msg('debug')
+                    tts('我在！')
+                    break
+                index += 1
+            
+            yield send_msg('to_recording')
+            stream_record = p.open(**audio_params)
+            if stream_record not in stream_lst:
+                stream_lst.append(stream_record)
+            record_q = Queue()
+            is_recording = True
 
-        stream_record = p.open(format=FORMAT,
-                               channels=CHANNELS,
-                               rate=RATE,
-                               input=True,
-                               frames_per_buffer=CHUNK)
-        LastFrame = []
-        total = []
-        while True:
-            audio_time = 1
-            current = []
-            for i in range(0, int(RATE * audio_time / CHUNK)):
-                data = stream_record.read(CHUNK)
-                current.append(data)
-            frames = current
-            save_audio('vad.wav', b''.join(frames))
-            total += current
-            ret = speech_is_end('vad.wav')
-            if ret:
+            def record_worker():
+                while is_recording:
+                    data = stream_record.read(CHUNK)
+                    record_q.put(data)
+            
+            t_rec = threading.Thread(target=record_worker)
+            t_rec.start()
+
+            total = []
+            while True:
+                yield send_msg('debug')
+                audio_time = 1.5
+                current = []
+                for i in range(0, int(RATE * audio_time / CHUNK)):
+                    data = record_q.get()
+                    current.append(data)
+                frames = current
+                yield send_msg('debug')
+                save_audio('vad.wav', b''.join(frames))
+                ret = is_speech('vad.wav')
+
+                if ret:
+                    total += current
+                    continue
+                else:
+                    if total == []:  # 第一轮循环就没人说话，则退出
+                        is_recording = False
+                        t_rec.join()
+                        stream_lst.remove(stream_record)
+                        stream_record.stop_stream()
+                        stream_record.close()
+                        break
+
+                is_recording = False
+                t_rec.join()
+                stream_lst.remove(stream_record)
+                stream_record.stop_stream()
+                stream_record.close()
                 yield send_msg('to_stt')
                 save_audio('recording.wav', b''.join(total))
                 inp = stt('recording.wav')
                 inp = inp[0].upper() + inp[1:]
                 yield send_msg('human_msg', inp)
-                tts_thread = threading.Thread(target=start_tts)
-                tts_thread.start()
-                player = threading.Thread(target=play_tts, args=(audio_queue,))
-                player.start()
+                tts_async('录音结束，模型推理中。')
 
                 # stage 1
-                prompt1 = prompt_template1.format(question=inp)
-                print(prompt1)
-                sentence = ''
+                prompt1 = prompt_template1.format(question=inp, )
+                # print('*' * 40, '\n', prompt1)
+                chat = llm(prompt1)
                 yield send_msg('prefixing')
-                for chunk in llm(prompt1):
-                    if sentence == '':
-                        yield send_msg('decoding')
+                sentence = next(chat)
+                yield send_msg('decoding')
+                yield send_msg('stage1', sentence)
+                for chunk in chat:
                     sentence += chunk
                     yield send_msg('stage1', chunk)
-
-                img_desc = ''
                 action_dict = extract_yaml(sentence)
-                if action_dict['Problem_analysis'] == 'Ambiguous':
+
+                if action_dict['Is_clear'] == 'No':
                     img_ret = toolbox.photography()
-                    yield send_msg('photo', next(img_ret))
+                    yield send_msg('photo', img_ret)
+                    # stage 2
+                    prompt2 = prompt_template2.format(question=inp, )
+                    # print('*' * 40, '\n', prompt2)
+                    chat = llm(prompt2, './onsite_img.jpg')
                     yield send_msg('prefixing')
-                    for chunk in img_ret:
-                        if img_desc == '':
-                            yield send_msg('decoding')
-                            yield send_msg('img_desc', '📷')
-                        yield send_msg('img_desc', chunk)
-                        img_desc += chunk
-                    img_desc = 'What you are currently seeing:\n' + img_desc
+                    sentence = next(chat)
+                    yield send_msg('decoding')
+                    yield send_msg('stage2', sentence)
+                    for chunk in chat:
+                        sentence += chunk
+                        yield send_msg('stage2', chunk)
+                    action_dict = extract_yaml(sentence)
+                    inp = action_dict['Real_question']
 
-                # stage 2
-                prompt2 = prompt_template2.format(file_names=file_names,
-                                                  question=inp,
-                                                  image_description=img_desc)
-                print('*' * 40)
-                print(prompt2)
-                sentence = ''
-                yield send_msg('prefixing')
-                for chunk in llm(prompt2):
-                    if sentence == '':
-                        yield send_msg('decoding')
-                    sentence += chunk
-                    yield send_msg('stage2', chunk)
-
-                action_dict = extract_yaml(sentence)
-                fname = action_dict['FileName']
-                if fname != 'Empty':
-                    yield send_msg('retrieve', fname)
-                    file_content = toolbox.retrieve(fname)
-                    ref = prompt_ref
-                    response = requests.post(url=f"http://127.0.0.1:8080/slots/0?action=erase")
-                    assert response.status_code == 200
-                    response = requests.post(url=f"http://127.0.0.1:8080/slots/0?action=restore",
-                                             json={'filename': f'{os.path.splitext(fname)[0]}.bin'})
-                    assert response.status_code == 200
-                else:
-                    file_content = ''
-                    ref = ''
+                folder = 'Building_Construction_Handbook'
+                fname = folder + '.md'
+                fpath = f'./documents/{folder}/{fname}'
+                yield send_msg('retrieve', fname)
+                unload_model(1)
+                load_model(0)
+                clear_cache()
+                load_cache(folder)
+                file_content = toolbox.retrieve(fpath)
+                
 
                 # stage 3
-                prompt3 = prompt_template3.format(image_description=img_desc,
-                                                  file_content=file_content,
-                                                  question=inp,
-                                                  show_ref=ref)
-                print('*' * 40)
-                print(prompt3)
-                sentence = ''
+                prompt3 = prompt_template3.format(
+                    file_content=file_content,
+                    question=inp,
+                )
+                # print('*' * 40, '\n', prompt3)
+                chat = llm(prompt3)
                 yield send_msg('prefixing')
-                for chunk in llm(prompt3):
-                    if sentence == '':
-                        yield send_msg('decoding')
+                sentence = next(chat)
+                yield send_msg('decoding')
+                is_speaking = False
+                tts_text = ''
+                for chunk in chat:
                     sentence += chunk
-                    yield send_msg('stage3', chunk)
-
-                yield send_msg('tts')
-                s_lst = split_sentence(sentence)
-                for i in range(0, len(s_lst) - 1, 2):
-                    sentence_queue.put(s_lst[i] + s_lst[i + 1])
-
-                cite = re.findall(r'(?<=\[)Part-\d+-Step-\d+(?=\])', sentence)
-                if len(cite) > 0:
-                    yield send_msg('ref', toolbox.show_ref(cite, file_content))
-                sentence_queue.put(None)
-                tts_thread.join()
-                player.join()
+                    if len(sentence.split('\n')) < 3:
+                        if '\nAnswer: ' in sentence:
+                            yield send_msg('stage3', chunk)
+                            tts_text += chunk
+                    else:
+                        if is_speaking == False:
+                            yield send_msg('stage3', chunk.split('\n')[0])
+                            tts_text += chunk.split('\n')[0]
+                            yield send_msg('tts')
+                            tts_async(tts_text)
+                            is_speaking = True
+                
+                action_dict = extract_yaml(sentence)
+                
+                if 'Block_idx' in action_dict:
+                    yield send_msg('ref', toolbox.show_ref(folder, action_dict['Block_idx']))
+                else:
+                    yield send_msg('stage3', '建议咨询其他工程师以获取更准确的答案。')
+                    tts_async('建议咨询其他工程师以获取更准确的答案。')
+                unload_model(0)
+                load_model(1)
+                tts('')
                 break
-        yield send_msg('to_waking')
+            yield send_msg('to_waking')
+    except GeneratorExit:
+        print("客户端断开连接")
+    finally:
+        connect_count -= 1
+        for item in stream_lst:
+            item.stop_stream()
+            item.close()
+            
 
 
 if __name__ == "__main__":
+    print('http://localhost:8000')
     CORS(app)
-    app.run(port=8000)
+    app.run(port=8000, )

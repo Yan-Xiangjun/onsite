@@ -1,0 +1,241 @@
+question1:
+  text: 接下来要在墙面上植筋，第一步是什么？
+  img: null
+question2:
+  text: 我刚才进行了植筋钻孔，这个孔壁应该怎样清理？
+  img: null
+question3: 
+  text: 植筋现场检验时，抽样比例是多少？
+  img: null
+question4:
+  text: 钢筋除锈完成后，要用什么擦拭干净？
+  img: null
+question5:
+  text: 往墙面上的植筋孔注胶，注多少算合适？
+  img: null
+question6:
+  text: 通过钻孔进行地基注浆加固时，要以多少度的倾角向下钻孔？
+  img: null
+question7:
+  text: 我在做钢筋混凝土面层加固，钢筋网外保护层厚度不应小于多少？
+  img: null
+question8:
+  text: HRB400钢筋焊接应选用什么焊条？
+  img: null
+question9:
+  text: 砖墙上已松动的勾缝砂浆应该如何处理？
+  img: null
+question10:
+  text: 接下来的工作是地基注浆加固，浆液材料用什么？
+  img: null
+question11:
+  text: 采用0.3MPa的压力进行地基注浆加固，现在发现若浆液不下沉，应该怎么办？
+  img: null
+question12:
+  text: 我要对地基注浆加固区域进行分段，应该如何分段？
+  img: null
+question13:
+  text: 我正在修复木屋架，发现腐朽严重，应如何处理？
+  img: null
+question14:
+  text: 钢筋表面有锈蚀时，用什么工具除锈？
+  img: null
+question15:
+  text: 木屋架如果需要全部拆除，施工过程中，需要注意什么？
+  img: null
+question16:
+  text: 墙体加固过程中，植筋前应如何确定原构件中钢筋的位置？
+  img: null
+question17:
+  text: 8mm直径的S形筋，要穿墙的话，开多大的孔？
+  img: null
+question18:
+  text: 进行地基注浆加固时，注浆管直径是多少？
+  img: null
+question19:
+  text: 进行地基注浆加固时，注浆孔的孔距是多少？
+  img: null
+question20:
+  text: 我已经在墙面上铺设了钢筋网，进行喷射混凝土施工前，还需如何处理墙面？
+  img: null
+question21:
+  text: 本工程中未注明强度的螺栓均采用什么螺栓？
+  img: null
+question22:
+  text: 本工程中高强螺栓的螺孔应为什么类型？
+  img: null
+question23:
+  text: 植筋钢筋的连接，优先采用哪种连接方式？
+  img: null
+question24:
+  text: 墙体植筋过程中，对于已经锚入墙体内的钢筋，能否再进行焊接？
+  img: null
+question25:
+  text: 我要焊接植筋钢筋，施焊部位距离注胶孔顶面不应小于多少？
+  img: null
+question26:
+  text: 墙面上的锚孔深度是210mm，我应该用什么器材注胶？
+  img: null
+question27:
+  text: 植筋用的胶，说明书上未写明适用温度，这时怎么处理？
+  img: null
+question28:
+  text: 本工程中，植筋使用的结构胶是什么等级？
+  img: null
+question29:
+  text: 植筋过程中，产生的废孔应如何处理？
+  img: null
+question30:
+  text: 施工中发现实际情况与图纸不符，我该怎么做？
+  img: null
+question31:
+  text: 这上面3mm的裂缝如何修复？
+  img: 3.jpg
+question32:
+  text: 这上面15mm的裂缝如何修复？
+  img: 3.jpg
+question33:
+  text: 修复这里的时候，铁箍接头如何处理？
+  img: 3.jpg
+question34:
+  text: 修复这里的时候，对涂料有何要求？
+  img: 3.jpg
+question35:
+  text: 这里面有破损的板应如何修复？
+  img: 5.jpg
+question36:
+  text: 要修复这里的裂缝，胶的抗拉强度不应小于多少？
+  img: 1.jpg
+question37:
+  text: 在这上面开洞时，应设置什么规格的钢支撑？
+  img: 1.jpg
+question38:
+  text: 在这上面开洞时，如何固定钢支撑？
+  img: 1.jpg
+question39:
+  text: 在这上面开洞后，填洞的时候，应该用什么材料？
+  img: 1.jpg
+question40:
+  text: 用电钻在这上面钻孔时，孔应该打在什么位置？
+  img: 2.jpg
+question41:
+  text: 钢筋网中的竖向钢筋朝向这里还是横向钢筋朝向这里？
+  img: 2.jpg
+question42:
+  text: 加固这里的时候，钢筋网四周如何锚固？
+  img: 2.jpg
+question43:
+  text: 加固这里的时候，能否采用喷射混凝土代替现浇混凝土？
+  img: 4.jpg
+question44:
+  text: 在这上面添加钢筋混凝土面层，竖向钢筋间距是多少？
+  img: 4.jpg
+question45:
+  text: 在这上面添加钢筋混凝土面层，水平钢筋间距是多少？
+  img: 4.jpg
+question46:
+  text: 对这里进行凿毛时，需要凿多深？
+  img: 4.jpg
+question47:
+  text: 修复这里的时候，这层白色的要留着吗？
+  img: 6.jpg
+question48:
+  text: 修复这里的时候，这些抹灰层要留着吗？
+  img: 4.jpg
+question49:
+  text: 在这上面应该增设厚度为多少的钢筋混凝土？
+  img: 4.jpg
+question50:
+  text: 加固这里的时候，应该用哪种混凝土？
+  img: 7.jpg
+question51:
+  text: 修复这里的时候，能否用横纹木条？
+  img: 3.jpg
+question52:
+  text: 修复这里的时候，铁箍厚度有何规定？
+  img: 5.jpg
+question53:
+  text: 修复这里的时候，铁箍宽度有何规定？
+  img: 5.jpg
+question54:
+  text: 在这里开洞后，洞口底部如何找平？
+  img: 1.jpg
+question55:
+  text: 这上面拆除之前，应该先做什么工作？
+  img: 8.jpg
+question56:
+  text: 要修复这里的裂缝，胶的抗弯强度有何要求？
+  img: 1.jpg
+question57:
+  text: 在这上面添加钢筋混凝土面层，竖向钢筋直径是多少？
+  img: 6.jpg
+question58:
+  text: 在这上面添加钢筋混凝土面层，水平钢筋直径是多少？
+  img: 6.jpg
+question59:
+  text: 钢筋网片是紧贴在这上面还是保持一定的间距？
+  img: 4.jpg
+question60:
+  text: 加固这里的时候，如果有严重的反碱，应该怎么办？
+  img: 7.jpg
+question61:
+  text: 我要看一下一层结构加固平面图。
+  img: null
+question62:
+  text: 我要看一下二层结构加固平面图。
+  img: null
+question63:
+  text: 帮我找一下1~3轴墙体的施工详图。
+  img: null
+question64:
+  text: 帮我找一下A~B轴墙体的施工详图。
+  img: null
+question65:
+  text: 给我看一下双面钢筋混凝土面层加固做法详图。
+  img: null
+question66:
+  text: 给我看一下钢筋混凝土面层端部做法详图。
+  img: null
+question67:
+  text: 帮我找到钢筋混凝土面层转角处做法详图。
+  img: null
+question68:
+  text: 帮我找到钢筋混凝土面层顶部做法详图。
+  img: null
+question69:
+  text: 钢筋网片及拉结筋详图在哪？帮我找出来。
+  img: null
+question70:
+  text: 窗洞口的附加配筋图在哪？帮我找出来。
+  img: null
+question71:
+  text: 做完植筋之后，植筋胶没用完，剩下的胶可以留着下次用吗？
+  img: null
+question72:
+  text: 喷射混凝土施工时，如果堵管，有没有应急处置方案？
+  img: null
+question73:
+  text: 进行钢筋焊接作业时，设备用电从哪里接？
+  img: null
+question74:
+  text: 混凝土浇筑时发现钢筋网位置偏移如何处理？
+  img: null
+question75:
+  text: 老旧电线未拆除，已经影响钻孔作业了，怎么办？
+  img: null
+question76:
+  text: 施工现场是否有专门的堆放材料区域？
+  img: null
+question77:
+  text: 更换木屋架的新木材，含水率有什么具体要求？
+  img: null
+question78:
+  text: 如果突然下雨，我们正在浇筑或刚浇筑好的墙体加固面层怎样处理？
+  img: null
+question79:
+  text: 注浆的时候如果压力表突然坏了，怎么办？
+  img: null
+question80:
+  text: 刚才植筋的时候，结构胶粘到皮肤上了，用什么清洗？
+  img: null
+

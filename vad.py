@@ -3,7 +3,7 @@ from silero_vad import load_silero_vad, read_audio, get_speech_timestamps
 model = load_silero_vad(onnx=True)
 
 
-def speech_is_end(path):
+def is_speech(path):
     wav = read_audio(path)
     out = get_speech_timestamps(
         wav,
@@ -12,10 +12,13 @@ def speech_is_end(path):
     )
 
     if len(out) == 0:
-        return True
-    else:
         return False
+    else:
+        return True
 
 
 if __name__ == '__main__':
-    print(speech_is_end('./vad.wav'))
+    import time
+    t1 = time.time()
+    print(is_speech('./vad.wav'))
+    print(time.time() - t1)

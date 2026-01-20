@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ChatOnSite</title>
     <link rel="stylesheet" href="static/bootstrap5/bootstrap.css">
-    <link rel="stylesheet" href="static/highlight_js/default.min.css">
     <link rel="stylesheet" href="static/css-test.css">
 </head>
 
@@ -28,22 +27,8 @@
 
 
 
-    <script src="static/marked/marked.min.js"></script>
-    <script src="static/marked-highlight/index.umd.min.js"></script>
-    <script src="static/highlight_js/highlight.min.js"></script>
     <script src="static/bootstrap5/bootstrap.bundle.js"></script>
     <script>
-        const { markedHighlight } = window.markedHighlight
-        const { Marked } = window.marked
-        const marked = new Marked(
-            markedHighlight({
-                langPrefix: 'hljs language-',
-                highlight(code, lang, info) {
-                    const language = hljs.getLanguage(lang) ? lang : 'plaintext'
-                    return hljs.highlight(code, { language }).value
-                }
-            })
-        )
         record_info = document.getElementById('record_info')
         collection = document.getElementById('collection')
         sse_text = new EventSource("http://localhost:8000/stream")
@@ -87,11 +72,33 @@
                     </svg>
                     AI Message:
                 </p>
-                <div class="stage1" style="color: rgba(0, 0, 0, 0.7);font-size: 14px;white-space: pre-wrap;padding: 5px;"></div>
-                <img class="photo" src="" style="width: 75%;height: auto;">
-                <div class="img_desc" style="color: rgba(0, 0, 0, 0.7);font-size: 14px;white-space: pre-wrap;"></div>
-                <div class="stage2" style="color: rgba(0, 0, 0, 0.7);font-size: 14px;white-space: pre-wrap;padding: 5px;"></div>
-                <div class="file" ></div>
+                <div class="card shadow-sm stage1-card d-none">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Intent recognition 1</span>
+                        <button aria-expanded="true" data-bs-target="#panel${chat_round}_1" data-bs-toggle="collapse" type="button"
+                            class="btn btn-sm btn-outline-secondary collapse-toggle"
+                            style="width: 30px;height: 20px">▼</button>
+                    </div>
+                    <div id="panel${chat_round}_1" class="collapse show">
+                        <div class="stage1 card-body text-dark" style="font-size: 14px;white-space: pre-wrap;"></div>
+                    </div>
+                    <img class="photo" src="" style="width: 75%;height: auto;">
+                    <div class="img_desc" style="color: rgba(0, 0, 0, 0.7);font-size: 14px;white-space: pre-wrap;"></div>
+                </div>
+                <p></p>
+                <div class="card shadow-sm stage2-card d-none">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Intent recognition 2</span>
+                        <button aria-expanded="true" data-bs-target="#panel${chat_round}_2" data-bs-toggle="collapse" type="button"
+                            class="btn btn-sm btn-outline-secondary collapse-toggle"
+                            style="width: 30px;height: 20px">▼</button>
+                    </div>
+                    <div id="panel${chat_round}_2" class="collapse show">
+                        <div class="stage2 card-body text-dark" style="font-size: 14px;white-space: pre-wrap;"></div>
+                    </div>
+                    <div class="file" style="margin: 10px"></div>
+                </div>
+                <p></p>
                 <div class="stage3" style="white-space: pre-wrap"></div>
                 <div class="ref"></div>
                 `
@@ -104,23 +111,27 @@
             stage1: (ans) => {
                 const elements = document.querySelectorAll('.stage1')
                 const msg_div = elements[elements.length - 1]
+                // 显示 stage1 卡片
+                const card = document.querySelectorAll('.stage1-card')
+                const card_div = card[card.length - 1]
+                card_div.classList.remove('d-none')
                 msg_div.style.backgroundColor = 'whitesmoke'
                 s += ans
                 msg_div.innerHTML = s
                 scroll_to_end()
             },
-            img_desc: (ans) => {
-                const elements = document.querySelectorAll('.img_desc')
-                const msg_div = elements[elements.length - 1]
-                msg_div.style.backgroundColor = 'whitesmoke'
-                s += ans
-                s = s.replace('<ED>', '')
-                msg_div.innerHTML = s
-                scroll_to_end()
-            },
+
             stage2: (ans) => {
                 const elements = document.querySelectorAll('.stage2')
                 const msg_div = elements[elements.length - 1]
+                // 显示 stage2 卡片
+                const card = document.querySelectorAll('.stage2-card')
+                const card_div = card[card.length - 1]
+                card_div.classList.remove('d-none')
+                const stage1Panel = document.getElementById(`panel${chat_round}_1`)
+                if (stage1Panel?.classList.contains('show')) {
+                    bootstrap.Collapse.getOrCreateInstance(stage1Panel).hide()
+                }
                 msg_div.style.backgroundColor = 'whitesmoke'
                 s += ans
                 msg_div.innerHTML = s
@@ -154,8 +165,12 @@
             stage3: (ans) => {
                 const elements = document.querySelectorAll('.stage3')
                 const msg_div = elements[elements.length - 1]
+                const stage2Panel = document.getElementById(`panel${chat_round}_2`)
+                if (stage2Panel?.classList.contains('show')) {
+                    bootstrap.Collapse.getOrCreateInstance(stage2Panel).hide()
+                }
                 s += ans
-                msg_div.innerHTML = s
+                msg_div.innerHTML = s.trim()
                 scroll_to_end()
             },
             ref: (ans) => {
@@ -163,25 +178,19 @@
                 const msg_div = elements[elements.length - 1]
                 const elements1 = document.querySelectorAll('.ref')
                 const ref_div = elements1[elements1.length - 1]
-                for (let k in ans) {
-                    const alias = ans[k][0]
-                    const img_b64 = ans[k][1]
-                    const ref_text = marked.parse(ans[k][2])
-                    const pattern = new RegExp(`\\[(${k})\\]`, 'g')
-                    msg_div.innerHTML = msg_div.innerHTML.replace(pattern,
-                        `<button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#refModal-Chat-${chat_round}-${k}">${alias}</button>`
-                    )
-                    ref_div.innerHTML += `
-                    <div class="modal fade" id="refModal-Chat-${chat_round}-${k}" tabindex="-1" aria-labelledby="refModalLabel-Chat-${chat_round}-${k}" aria-hidden="true">
+                const img_b64 = ans
+                msg_div.innerHTML +=
+                    `<button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#refModal-Chat-${chat_round}">[ref]</button>`
+                ref_div.innerHTML += `
+                    <div class="modal fade" id="refModal-Chat-${chat_round}" tabindex="-1" aria-labelledby="refModalLabel-Chat-${chat_round}" aria-hidden="true">
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="refModalLabel-Chat-${chat_round}-${k}">${k}</h5>
+                                    <h5 class="modal-title" id="refModalLabel-Chat-${chat_round}">Ref</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
                                     <img class="photo" src="data:image/jpeg;base64,${img_b64}" style="width: 100%;height: auto;padding: 10px;">
-                                    ${ref_text}
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -190,7 +199,6 @@
                         </div>
                     </div>
                 `
-                }
 
 
             },
@@ -199,10 +207,9 @@
             to_waking: () => {
                 record_info.innerHTML = '<span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Waiting for keyword...'
                 s = ''
-            }
+            },
 
-
-
+            debug: () => {}
 
         }
 
